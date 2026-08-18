@@ -1,4 +1,4 @@
-# 🖋️ ScribeMind Pro — Твой цифровой манускрипт
+# 🖋️ ScribeMind Pro/RehBook — Твой цифровой манускрипт
 
 [![GitHub Pages](https://img.shields.io/badge/Live-Demo-brightgreen.svg)](https://smachnireh.github.io/rehbook/)
 ![License](https://img.shields.io/badge/License-MIT-blue.svg)
