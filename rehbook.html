@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScribeMind Pro — Ultimate Edition</title>
+    <style>
+        :root {
+            --paper-bg: #fdf6e3;
+            --paper-line: #d1ccb9;
+            --paper-margin: #e8a5a5;
+            --sidebar-bg: #1a1a1a;
+            --accent: #a67c52;
+            --text-main: #2c3e50;
+            --line-height: 32px;
+            --paper-width: 900px;
+            --paper-height: 1024px;
+            --pdf-content-width: 644px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: #d6cfbb;
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- UI Панели --- */
+        #side-panels { display: flex; height: 100vh; transition: 0.4s; z-index: 100; }
+        #side-panels.hidden { margin-left: -520px; }
+        aside { background: var(--sidebar-bg); color: #aaa; width: 260px; border-right: 1px solid #000; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; background: #111; border-bottom: 2px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+        .list-container { flex: 1; overflow-y: auto; padding: 10px; }
+        .item { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; border-left: 3px solid transparent; }
+        .item:hover { background: #2a2a2a; color: #fff; }
+        .item.active { background: #333; border-left-color: var(--accent); color: #fff; }
+
+        main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .toolbar { height: 60px; background: #fff; display: flex; align-items: center; padding: 0 20px; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; }
+        .btn { background: #fff; border: 1px solid #b5a98f; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem; font-family: sans-serif; }
+        .btn:hover { background: var(--accent); color: #fff; }
+
+        #editor-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 0; display: flex; flex-direction: column; align-items: center; }
+
+        /* --- ЛИСТ БУМАГИ --- */
+        .paper-sheet {
+            width: var(--paper-width);
+            height: var(--paper-height);
+            background-color: var(--paper-bg);
+            background-image:
+                linear-gradient(90deg, transparent 79px, var(--paper-margin) 79px, var(--paper-margin) 81px, transparent 81px),
+                linear-gradient(var(--paper-line) 1px, transparent 1px);
+            background-size: 100% 100%, 100% var(--line-height);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            position: relative;
+            flex-shrink: 0;
+            margin-bottom: 60px;
+        }
+
+        #chapter-title-input { width: calc(100% - 150px); margin-left: 100px; height: 64px; line-height: 64px; background: transparent; border: none; font-family: 'Georgia', serif; font-size: 2.2rem; font-weight: bold; outline: none; }
+        #content-editor { width: 100%; height: calc(var(--paper-height) - 100px); background: transparent; border: none; resize: none; outline: none; font-family: 'Georgia', serif; font-size: 19px; line-height: var(--line-height); padding: 8px 50px 40px 100px; color: #2c3e50; overflow: hidden; }
+
+        .sheet-num { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: #999; font-style: italic; font-size: 0.9rem; pointer-events: none; }
+
+        .pagination { display: flex; align-items: center; gap: 10px; padding: 15px; background: #c9c0aa; justify-content: center; }
+        .page-dot { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; cursor: pointer; border: 1px solid #b5a98f; font-size: 0.8rem; }
+        .page-dot.active { background: var(--accent); color: #fff; }
+
+        /* --- МОДАЛЬНЫЕ ОКНА --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-card { background: #252525; color: white; width: 450px; border-radius: 12px; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .modal-input { width: 100%; padding: 12px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; margin: 20px 0; outline: none; }
+
+        /* Экспорт модалка */
+        #export-modal .modal-card { width: 800px; max-width: 90vw; }
+        #export-preview { width: 100%; height: 400px; background: #111; color: #adff2f; border: 1px solid #333; padding: 15px; font-family: 'Courier New', monospace; font-size: 0.85rem; overflow-y: auto; white-space: pre-wrap; margin: 15px 0; border-radius: 6px; }
+        .export-tabs { display: flex; gap: 10px; margin-bottom: 10px; }
+        .tab-btn { background: #333; color: #aaa; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .tab-btn.active { background: var(--accent); color: #fff; }
+
+        /* --- ПЕЧАТЬ --- */
+        #measure-layer { position: absolute; visibility: hidden; width: 644px; font-family: 'Georgia', serif; font-size: 19px; line-height: 32px; white-space: pre-wrap; word-wrap: break-word; }
+        #print-zone { display: none; }
+
+        @media print {
+            @page { size: A4; margin: 0; }
+            body { background: white !important; }
+            #side-panels, .toolbar, .pagination, #editor-scroll-viewport, .modal-overlay { display: none !important; }
+            #print-zone { display: block !important; }
+            .print-page {
+                width: 210mm; height: 297mm; position: relative; page-break-after: always;
+                background-color: var(--paper-bg) !important;
+                background-image:
+                    linear-gradient(90deg, transparent 79px, var(--paper-margin) 79px, var(--paper-margin) 81px, transparent 81px),
+                    linear-gradient(var(--paper-line) 1px, transparent 1px) !important;
+                background-size: 100% 100%, 100% var(--line-height) !important;
+                -webkit-print-color-adjust: exact;
+                overflow: hidden;
+            }
+            .print-text { margin-left: 100px; margin-right: 50px; font-size: 19px; line-height: 32px; white-space: pre-wrap; padding-top: 8px; }
+            .print-title { margin-left: 100px; height: 64px; line-height: 64px; font-size: 2.2rem; font-weight: bold; padding-top: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="measure-layer"></div>
+
+    <!-- Модалка создания/переименования -->
+    <div class="modal-overlay" id="custom-modal">
+        <div class="modal-card">
+            <h3 id="modal-title">Название</h3>
+            <input type="text" id="modal-input" class="modal-input">
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn" onclick="ui.closeModal()">Отмена</button>
+                <button class="btn" id="modal-confirm-btn" style="background: var(--accent); color:white; border:none;">ОК</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модалка экспорта -->
+    <div class="modal-overlay" id="export-modal">
+        <div class="modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Экспорт содержимого</h3>
+                <button class="btn" onclick="exportModule.close()">✕</button>
+            </div>
+
+            <div class="export-tabs" style="margin-top: 20px;">
+                <button id="tab-normal" class="tab-btn active" onclick="exportModule.setMode('normal')">Для людей (Текст)</button>
+                <button id="tab-ai" class="tab-btn" onclick="exportModule.setMode('ai')">AI-Compressed (Экономия токенов)</button>
+            </div>
+
+            <div id="ai-info" style="font-size: 0.8rem; color: #adff2f; display: none;">
+                💡 Режим ИИ: Удалены лишние пробелы, структура упакована. Текст сохранен на 100%.
+                <span id="compression-stats" style="font-weight: bold; margin-left: 10px; color: #fff; background: #444; padding: 2px 6px; border-radius: 4px;"></span>
+            </div>
+
+            <div id="export-preview"></div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn" onclick="exportModule.copy()">Скопировать в буфер</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="print-zone"></div>
+
+    <div id="side-panels">
+        <aside>
+            <div class="sidebar-header"><h2>Книги</h2><button onclick="ui.promptBook()" class="btn">+</button></div>
+            <div id="book-list" class="list-container"></div>
+        </aside>
+        <aside style="background: #222;">
+            <div class="sidebar-header" style="background: #111;"><h2>Главы</h2><button onclick="ui.promptChapter()" class="btn">+</button></div>
+            <div id="toc-list" class="list-container"></div>
+        </aside>
+    </div>
+
+    <main>
+        <div class="toolbar">
+            <button class="btn" onclick="app.toggleSidebar()">≡</button>
+            <div id="breadcrumb" style="color: #888; font-size: 0.9rem;"></div>
+            <div style="margin-left: auto; display: flex; gap: 10px;">
+                <button class="btn" onclick="exportModule.open()">Экспорт Текста / AI</button>
+                <button class="btn" onclick="app.preparePDF()" style="background: var(--accent); color: white; border: none;">Сохранить PDF</button>
+            </div>
+        </div>
+
+        <div id="editor-scroll-viewport">
+            <div class="paper-sheet" id="paper" style="display: none;">
+                <input type="text" id="chapter-title-input" oninput="app.updateChapterTitle(this.value)">
+                <textarea id="content-editor" oninput="app.handleInput(this)" spellcheck="false"></textarea>
+                <div class="sheet-num" id="sheet-page-number">1</div>
+            </div>
+            <div id="empty-notice" style="margin-top: 100px; opacity: 0.3; text-align: center;"><h1>ScribeMind</h1><p>Выберите книгу или создайте новую</p></div>
+        </div>
+
+        <div class="pagination" id="pagination-ctrl" style="display: none;">
+            <button class="btn" onclick="app.changePage(-1)">←</button>
+            <div id="page-nav" style="display: flex; gap: 8px;"></div>
+            <button class="btn" onclick="app.changePage(1)">→</button>
+        </div>
+    </main>
+
+    <script>
+        const app = {
+            data: { books: [], activeBookId: null, activeChapterId: null, activePageIdx: 0 },
+            sidebarVisible: true,
+
+            init() {
+                const saved = localStorage.getItem('scribemind_v12');
+                if (saved) this.data = JSON.parse(saved);
+                ui.renderBooks();
+                this.refreshUI();
+            },
+
+            save() { localStorage.setItem('scribemind_v12', JSON.stringify(this.data)); },
+
+            handleInput(el) {
+                const ch = this.getActiveChapter();
+                ch.pages[this.data.activePageIdx] = el.value;
+
+                if (el.scrollHeight > el.clientHeight) {
+                    const words = el.value.split(' ');
+                    const lastWord = words.pop();
+                    ch.pages[this.data.activePageIdx] = words.join(' ');
+
+                    if (ch.pages[this.data.activePageIdx + 1] !== undefined) {
+                        ch.pages[this.data.activePageIdx + 1] = lastWord + " " + ch.pages[this.data.activePageIdx + 1];
+                    } else {
+                        ch.pages.push(lastWord);
+                    }
+
+                    this.data.activePageIdx++;
+                    this.refreshUI();
+                    document.getElementById('editor-scroll-viewport').scrollTop = 0;
+
+                    setTimeout(() => {
+                        const edit = document.getElementById('content-editor');
+                        edit.focus();
+                        edit.selectionStart = edit.selectionEnd = 0;
+                    }, 0);
+                }
+                this.save();
+            },
+
+            refreshUI() {
+                const ch = this.getActiveChapter();
+                const book = this.data.books.find(b => b.id === this.data.activeBookId);
+                const paper = document.getElementById('paper');
+                const titleInput = document.getElementById('chapter-title-input');
+                const editor = document.getElementById('content-editor');
+
+                if (ch) {
+                    paper.style.display = 'block';
+                    document.getElementById('empty-notice').style.display = 'none';
+                    document.getElementById('pagination-ctrl').style.display = 'flex';
+
+                    if (this.data.activePageIdx === 0) {
+                        titleInput.style.display = 'block';
+                        titleInput.value = ch.title;
+                        editor.style.height = 'calc(var(--paper-height) - 100px)';
+                    } else {
+                        titleInput.style.display = 'none';
+                        editor.style.height = 'calc(var(--paper-height) - 60px)';
+                    }
+
+                    editor.value = ch.pages[this.data.activePageIdx] || "";
+                    document.getElementById('sheet-page-number').innerText = this.getGlobalNum();
+                    document.getElementById('breadcrumb').innerText = `${book.title} / ${ch.title}`;
+                    this.renderPageNav(ch.pages.length);
+                } else {
+                    paper.style.display = 'none';
+                    document.getElementById('empty-notice').style.display = 'block';
+                    document.getElementById('pagination-ctrl').style.display = 'none';
+                }
+            },
+
+            getGlobalNum() {
+                const book = this.data.books.find(b => b.id === this.data.activeBookId);
+                let count = 0;
+                if(!book) return 1;
+                for (let ch of book.chapters) {
+                    if (ch.id === this.data.activeChapterId) return count + this.data.activePageIdx + 1;
+                    count += ch.pages.length;
+                }
+                return 1;
+            },
+
+            renderPageNav(total) {
+                const nav = document.getElementById('page-nav');
+                nav.innerHTML = Array.from({length: total}, (_, i) => `<div class="page-dot ${i === this.data.activePageIdx ? 'active' : ''}" onclick="app.data.activePageIdx=${i}; app.refreshUI();">${i+1}</div>`).join('');
+            },
+
+            preparePDF() {
+                const book = this.data.books.find(b => b.id === this.data.activeBookId);
+                if (!book) return;
+                const printZone = document.getElementById('print-zone');
+                const measure = document.getElementById('measure-layer');
+                printZone.innerHTML = '';
+                let globalCounter = 1;
+
+                book.chapters.forEach(ch => {
+                    let fullText = ch.pages.join(' ').replace(/\s+/g, ' ').trim();
+                    let words = fullText.split(' ');
+                    let isFirstPage = true;
+                    const maxH = 920;
+
+                    while (words.length > 0) {
+                        measure.innerText = "";
+                        let addedIdx = 0;
+                        let titleOffset = isFirstPage ? 80 : 20;
+
+                        for (let i = 0; i < words.length; i++) {
+                            measure.innerText = words.slice(0, i + 1).join(' ');
+                            if (measure.offsetHeight + titleOffset > maxH) break;
+                            addedIdx = i + 1;
+                        }
+                        if (addedIdx === 0) addedIdx = 1;
+
+                        const pageContent = words.splice(0, addedIdx).join(' ');
+                        const pageDiv = document.createElement('div');
+                        pageDiv.className = 'print-page';
+                        let header = isFirstPage ? `<div class="print-title">${ch.title}</div>` : '';
+                        pageDiv.innerHTML = `${header}<div class="print-text">${pageContent}</div><div class="sheet-num">${globalCounter}</div>`;
+                        printZone.appendChild(pageDiv);
+                        globalCounter++;
+                        isFirstPage = false;
+                    }
+                });
+                window.print();
+            },
+
+            getActiveChapter() {
+                const b = this.data.books.find(b => b.id === this.data.activeBookId);
+                return b ? b.chapters.find(c => c.id === this.data.activeChapterId) : null;
+            },
+            updateChapterTitle(v) { const ch = this.getActiveChapter(); if(ch){ch.title = v; ui.renderTOC(); this.save();} },
+            toggleSidebar() { this.sidebarVisible = !this.sidebarVisible; document.getElementById('side-panels').classList.toggle('hidden', !this.sidebarVisible); },
+            changePage(dir) {
+                const ch = this.getActiveChapter();
+                const target = this.data.activePageIdx + dir;
+                if (target >= 0 && target < ch.pages.length) { this.data.activePageIdx = target; this.refreshUI(); document.getElementById('editor-scroll-viewport').scrollTop = 0; }
+                else if (target === ch.pages.length) { ch.pages.push(""); this.data.activePageIdx = target; this.refreshUI(); document.getElementById('editor-scroll-viewport').scrollTop = 0; }
+            }
+        };
+
+        const exportModule = {
+            mode: 'normal',
+            open() {
+                if (!app.data.activeBookId) return;
+                document.getElementById('export-modal').style.display = 'flex';
+                this.render();
+            },
+            close() { document.getElementById('export-modal').style.display = 'none'; },
+            setMode(m) {
+                this.mode = m;
+                document.getElementById('tab-normal').className = m === 'normal' ? 'tab-btn active' : 'tab-btn';
+                document.getElementById('tab-ai').className = m === 'ai' ? 'tab-btn active' : 'tab-btn';
+                document.getElementById('ai-info').style.display = m === 'ai' ? 'block' : 'none';
+                this.render();
+            },
+            render() {
+                const book = app.data.books.find(b => b.id === app.data.activeBookId);
+                const preview = document.getElementById('export-preview');
+                let output = "";
+
+                if (this.mode === 'normal') {
+                    output += `КНИГА: ${book.title.toUpperCase()}\n`;
+                    output += `================================\n\n`;
+                    book.chapters.forEach(ch => {
+                        output += `ГЛАВА: ${ch.title}\n`;
+                        output += `--------------------------------\n`;
+                        output += ch.pages.join(' ').replace(/\s+/g, ' ').trim() + "\n\n";
+                    });
+                } else {
+                    let rawLen = 0;
+                    output = `[B:${book.title.replace(/\s/g, '_')}]`;
+                    book.chapters.forEach((ch, idx) => {
+                        const cleanText = ch.pages.join(' ').replace(/\s+/g, ' ').trim();
+                        rawLen += (ch.title.length + cleanText.length);
+                        output += `[Ch${idx+1}:${ch.title.replace(/\s/g, '_')}]${cleanText}`;
+                    });
+                    const saving = Math.round((1 - output.length / rawLen) * 100);
+                    document.getElementById('compression-stats').innerText = `Экономия: ${saving > 0 ? saving : 0}% символов`;
+                }
+                preview.innerText = output;
+            },
+            copy() {
+                const txt = document.getElementById('export-preview').innerText;
+                navigator.clipboard.writeText(txt).then(() => alert("Текст скопирован в буфер обмена!"));
+            }
+        };
+
+        const ui = {
+            promptBook() { ui.showModal("Новая книга", "", (v) => { const id = 'b'+Date.now(); app.data.books.push({ id, title: v, chapters: [] }); app.selectBook(id); });},
+            promptChapter() { if(!app.data.activeBookId) return; ui.showModal("Новая глава", "", (v) => { const b = app.data.books.find(x => x.id === app.data.activeBookId); const id = 'c'+Date.now(); b.chapters.push({ id, title: v, pages: [""] }); app.selectChapter(id); });},
+            renderBooks() { document.getElementById('book-list').innerHTML = app.data.books.map(b => `<div class="item ${b.id === app.data.activeBookId ? 'active' : ''}" onclick="app.selectBook('${b.id}')">${b.title}</div>`).join(''); },
+            renderTOC() { const b = app.data.books.find(x => x.id === app.data.activeBookId); if (!b) return; document.getElementById('toc-list').innerHTML = b.chapters.map(c => `<div class="item ${c.id === app.data.activeChapterId ? 'active' : ''}" onclick="app.selectChapter('${c.id}')">${c.title}</div>`).join(''); },
+            showModal(t, p, cb) { const m = document.getElementById('custom-modal'); document.getElementById('modal-title').innerText = t; const i = document.getElementById('modal-input'); i.value = ""; m.style.display = 'flex'; i.focus(); document.getElementById('modal-confirm-btn').onclick = () => { if(i.value){cb(i.value); ui.closeModal();} }; },
+            closeModal() { document.getElementById('custom-modal').style.display = 'none'; }
+        };
+
+        app.selectBook = (id) => { app.data.activeBookId = id; const b = app.data.books.find(x=>x.id===id); if(b.chapters.length===0) ui.promptChapter(); else app.selectChapter(b.chapters[0].id); ui.renderBooks(); };
+        app.selectChapter = (id) => { app.data.activeChapterId = id; app.data.activePageIdx = 0; ui.renderTOC(); app.refreshUI(); };
+
+        app.init();
+    </script>
+</body>
+</html>
