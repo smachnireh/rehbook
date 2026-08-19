@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScribeMind Pro — Perfect UI Edition</title>
+    
+    <!-- 1. НОВОЕ НАЗВАНИЕ ВКЛАДКИ -->
+    <title>RehBook</title>
+
+    <!-- 2. ИКОНКА (Встроена прямо в код) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='20' y='10' width='60' height='80' rx='5' fill='%23a67c52' /><path d='M30 25 h40 M30 40 h40 M30 55 h40 M30 70 h25' stroke='%23fdf6e3' stroke-width='6' stroke-linecap='round' /></svg>">
+
     <style>
         :root {
             --paper-bg: #fdf6e3;
@@ -72,7 +78,7 @@
         /* --- Main Content --- */
         main { flex: 1; display: flex; flex-direction: column; position: relative; height: 100vh; min-width: 0; }
         .toolbar { height: 60px; background: #fff; display: flex; align-items: center; padding: 0 20px; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; }
-
+        
         .btn { background: #fff; border: 1px solid #b5a98f; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem; font-family: sans-serif; transition: 0.2s; }
         .btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
@@ -83,7 +89,7 @@
             width: var(--paper-width);
             height: var(--paper-height);
             background-color: var(--paper-bg);
-            background-image:
+            background-image: 
                 linear-gradient(90deg, transparent 79px, var(--paper-margin) 79px, var(--paper-margin) 81px, transparent 81px),
                 linear-gradient(var(--paper-line) 1px, transparent 1px);
             background-size: 100% 100%, 100% var(--line-height);
@@ -152,7 +158,7 @@
                 <button class="btn" id="export-mode-normal" onclick="exportModule.setMode('normal')">Для людей</button>
                 <button class="btn" id="export-mode-ai" onclick="exportModule.setMode('ai')">AI-Compressed</button>
             </div>
-            <div id="export-preview"></div>
+            <div id="export-preview" style="width: 100%; height: 350px; background: #000; color: #adff2f; padding: 10px; font-family: monospace; border-radius: 6px; overflow-y: auto; white-space: pre-wrap; margin: 10px 0;"></div>
             <div style="display: flex; justify-content: flex-end;">
                 <button class="btn" onclick="exportModule.copy()">Скопировать всё</button>
             </div>
@@ -173,7 +179,7 @@
                 <button class="btn" style="background: #333; color: #888; border:none;" onclick="app.importBackup()">Импорт</button>
             </div>
         </aside>
-
+        
         <aside id="chapters-aside" style="background: #222;">
             <div class="sidebar-header" style="background: #111;">
                 <h2>Главы</h2>
@@ -314,7 +320,7 @@
 
             renderPageNav(total) {
                 const nav = document.getElementById('page-nav');
-                nav.innerHTML = Array.from({length: total}, (_, i) =>
+                nav.innerHTML = Array.from({length: total}, (_, i) => 
                     `<div class="page-dot ${i === this.data.activePageIdx ? 'active' : ''}" onclick="app.goToPage(${i})">${i+1}</div>`
                 ).join('');
             },
@@ -332,21 +338,21 @@
                 else if (target === ch.pages.length) { ch.pages.push(""); this.goToPage(target); }
             },
 
-            updateChapterTitle(v) {
-                const ch = this.getActiveChapter();
-                if(ch) { ch.title = v; ui.renderTOC(); this.save(); }
+            updateChapterTitle(v) { 
+                const ch = this.getActiveChapter(); 
+                if(ch) { ch.title = v; ui.renderTOC(); this.save(); } 
             },
 
-            toggleSidebar() {
-                this.sidebarVisible = !this.sidebarVisible;
-                document.getElementById('side-panels').classList.toggle('hidden', !this.sidebarVisible);
+            toggleSidebar() { 
+                this.sidebarVisible = !this.sidebarVisible; 
+                document.getElementById('side-panels').classList.toggle('hidden', !this.sidebarVisible); 
             },
 
             downloadBackup() {
                 const blob = new Blob([JSON.stringify(this.data)], {type: "application/json"});
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.href = url; a.download = `scribemind_backup.json`; a.click();
+                a.href = url; a.download = `rehbook_backup.json`; a.click();
             },
 
             importBackup() {
@@ -457,14 +463,13 @@
                 });
             },
 
-            // УНИВЕРСАЛЬНОЕ МОДАЛЬНОЕ ОКНО
             showModal(title, desc, value, isPrompt, cb) {
                 const m = document.getElementById('system-modal');
                 const confirmBtn = document.getElementById('modal-confirm-btn');
                 document.getElementById('modal-title').innerText = title;
                 document.getElementById('modal-desc').innerText = desc;
                 const input = document.getElementById('modal-input');
-
+                
                 if (isPrompt) {
                     input.style.display = 'block';
                     input.value = value;
