@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ScribeMind Pro — Ultimate Edition</title>
+    <title>ScribeMind Pro — Perfect UI Edition</title>
     <style>
         :root {
             --paper-bg: #fdf6e3;
             --paper-line: #d1ccb9;
             --paper-margin: #e8a5a5;
             --sidebar-bg: #1a1a1a;
+            --sidebar-item: #252525;
             --accent: #a67c52;
+            --danger: #8b3a3a;
             --text-main: #2c3e50;
             --line-height: 32px;
             --paper-width: 900px;
             --paper-height: 1024px;
-            --pdf-content-width: 644px;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,24 +30,55 @@
             overflow: hidden;
         }
 
-        /* --- UI Панели --- */
+        /* --- Sidebars --- */
         #side-panels { display: flex; height: 100vh; transition: 0.4s; z-index: 100; }
         #side-panels.hidden { margin-left: -520px; }
-        aside { background: var(--sidebar-bg); color: #aaa; width: 260px; border-right: 1px solid #000; display: flex; flex-direction: column; }
-        .sidebar-header { padding: 20px; background: #111; border-bottom: 2px solid var(--accent); display: flex; justify-content: space-between; align-items: center; }
+
+        aside {
+            background-color: var(--sidebar-bg);
+            color: #aaa;
+            display: flex;
+            flex-direction: column;
+            width: 260px;
+            border-right: 1px solid #000;
+        }
+
+        .sidebar-header {
+            padding: 20px; background: #111;
+            border-bottom: 2px solid var(--accent);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .sidebar-header h2 { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--accent); }
+
         .list-container { flex: 1; overflow-y: auto; padding: 10px; }
-        .item { padding: 12px; margin-bottom: 4px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; border-left: 3px solid transparent; }
-        .item:hover { background: #2a2a2a; color: #fff; }
-        .item.active { background: #333; border-left-color: var(--accent); color: #fff; }
 
-        main { flex: 1; display: flex; flex-direction: column; position: relative; }
+        .item {
+            padding: 12px; margin-bottom: 6px; border-radius: 6px;
+            cursor: pointer; transition: 0.2s; font-size: 0.85rem;
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--sidebar-item);
+            border: 1px solid transparent;
+        }
+        .item:hover { background: #333; color: #fff; }
+        .item.active { background: #3a3a3a; border-color: var(--accent); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        .item-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 10px; }
+        .item-actions { display: none; gap: 8px; }
+        .item:hover .item-actions { display: flex; }
+
+        .btn-mini { background: none; border: none; color: #666; cursor: pointer; font-size: 0.9rem; }
+        .btn-mini:hover { color: var(--accent); }
+
+        /* --- Main Content --- */
+        main { flex: 1; display: flex; flex-direction: column; position: relative; height: 100vh; min-width: 0; }
         .toolbar { height: 60px; background: #fff; display: flex; align-items: center; padding: 0 20px; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; }
-        .btn { background: #fff; border: 1px solid #b5a98f; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.8rem; font-family: sans-serif; }
-        .btn:hover { background: var(--accent); color: #fff; }
 
-        #editor-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 0; display: flex; flex-direction: column; align-items: center; }
+        .btn { background: #fff; border: 1px solid #b5a98f; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.75rem; font-family: sans-serif; transition: 0.2s; }
+        .btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-        /* --- ЛИСТ БУМАГИ --- */
+        #editor-scroll-viewport { flex: 1; overflow-y: auto; padding: 40px 0; display: flex; flex-direction: column; align-items: center; scroll-behavior: smooth; }
+
+        /* Paper Sheet */
         .paper-sheet {
             width: var(--paper-width);
             height: var(--paper-height);
@@ -66,84 +98,63 @@
 
         .sheet-num { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; color: #999; font-style: italic; font-size: 0.9rem; pointer-events: none; }
 
-        .pagination { display: flex; align-items: center; gap: 10px; padding: 15px; background: #c9c0aa; justify-content: center; }
+        /* Pagination */
+        .pagination { display: flex; align-items: center; gap: 8px; padding: 15px; background: #c9c0aa; justify-content: center; z-index: 10; border-top: 1px solid #b8af98; }
         .page-dot { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; cursor: pointer; border: 1px solid #b5a98f; font-size: 0.8rem; }
-        .page-dot.active { background: var(--accent); color: #fff; }
+        .page-dot.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-        /* --- МОДАЛЬНЫЕ ОКНА --- */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-card { background: #252525; color: white; width: 450px; border-radius: 12px; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-        .modal-input { width: 100%; padding: 12px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; margin: 20px 0; outline: none; }
+        /* --- CUSTOM MODALS --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 1000; backdrop-filter: blur(4px); }
+        .modal-card { background: #252525; color: white; width: 450px; border-radius: 12px; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid #333; }
+        .modal-card h3 { color: var(--accent); margin-bottom: 15px; font-family: sans-serif; font-size: 1.1rem; }
+        .modal-text { font-size: 0.95rem; color: #bbb; line-height: 1.5; margin-bottom: 20px; font-family: sans-serif; }
+        .modal-input { width: 100%; padding: 12px; background: #111; border: 1px solid #444; color: white; border-radius: 6px; margin-bottom: 20px; outline: none; font-size: 1rem; }
+        .modal-input:focus { border-color: var(--accent); }
+        .modal-btns { display: flex; justify-content: flex-end; gap: 12px; }
 
-        /* Экспорт модалка */
-        #export-modal .modal-card { width: 800px; max-width: 90vw; }
-        #export-preview { width: 100%; height: 400px; background: #111; color: #adff2f; border: 1px solid #333; padding: 15px; font-family: 'Courier New', monospace; font-size: 0.85rem; overflow-y: auto; white-space: pre-wrap; margin: 15px 0; border-radius: 6px; }
-        .export-tabs { display: flex; gap: 10px; margin-bottom: 10px; }
-        .tab-btn { background: #333; color: #aaa; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        .tab-btn.active { background: var(--accent); color: #fff; }
-
-        /* --- ПЕЧАТЬ --- */
-        #measure-layer { position: absolute; visibility: hidden; width: 644px; font-family: 'Georgia', serif; font-size: 19px; line-height: 32px; white-space: pre-wrap; word-wrap: break-word; }
+        /* Print */
         #print-zone { display: none; }
-
         @media print {
             @page { size: A4; margin: 0; }
-            body { background: white !important; }
-            #side-panels, .toolbar, .pagination, #editor-scroll-viewport, .modal-overlay { display: none !important; }
             #print-zone { display: block !important; }
-            .print-page {
-                width: 210mm; height: 297mm; position: relative; page-break-after: always;
-                background-color: var(--paper-bg) !important;
-                background-image:
-                    linear-gradient(90deg, transparent 79px, var(--paper-margin) 79px, var(--paper-margin) 81px, transparent 81px),
-                    linear-gradient(var(--paper-line) 1px, transparent 1px) !important;
-                background-size: 100% 100%, 100% var(--line-height) !important;
-                -webkit-print-color-adjust: exact;
-                overflow: hidden;
-            }
+            #side-panels, .toolbar, .pagination, #editor-scroll-viewport, .modal-overlay { display: none !important; }
+            .print-page { width: 210mm; height: 297mm; position: relative; page-break-after: always; background-color: var(--paper-bg) !important; background-image: linear-gradient(90deg, transparent 79px, var(--paper-margin) 79px, var(--paper-margin) 81px, transparent 81px), linear-gradient(var(--paper-line) 1px, transparent 1px) !important; background-size: 100% 100%, 100% var(--line-height) !important; -webkit-print-color-adjust: exact; }
             .print-text { margin-left: 100px; margin-right: 50px; font-size: 19px; line-height: 32px; white-space: pre-wrap; padding-top: 8px; }
-            .print-title { margin-left: 100px; height: 64px; line-height: 64px; font-size: 2.2rem; font-weight: bold; padding-top: 10px; }
+            .print-title { margin-left: 100px; font-size: 2.2rem; font-weight: bold; padding-top: 20px; height: 80px; }
         }
     </style>
 </head>
 <body>
 
-    <div id="measure-layer"></div>
+    <div id="measure-layer" style="position: absolute; visibility: hidden; width: 644px; font-family: 'Georgia', serif; font-size: 19px; line-height: 32px; white-space: pre-wrap;"></div>
 
-    <!-- Модалка создания/переименования -->
-    <div class="modal-overlay" id="custom-modal">
+    <!-- Единое Модальное Окно -->
+    <div class="modal-overlay" id="system-modal">
         <div class="modal-card">
-            <h3 id="modal-title">Название</h3>
+            <h3 id="modal-title">Заголовок</h3>
+            <p id="modal-desc" class="modal-text"></p>
             <input type="text" id="modal-input" class="modal-input">
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <div class="modal-btns">
                 <button class="btn" onclick="ui.closeModal()">Отмена</button>
-                <button class="btn" id="modal-confirm-btn" style="background: var(--accent); color:white; border:none;">ОК</button>
+                <button class="btn" id="modal-confirm-btn">Подтвердить</button>
             </div>
         </div>
     </div>
 
-    <!-- Модалка экспорта -->
+    <!-- Модальное окно экспорта -->
     <div class="modal-overlay" id="export-modal">
-        <div class="modal-card">
+        <div class="modal-card" style="width: 750px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3>Экспорт содержимого</h3>
+                <h3>Экспорт проекта</h3>
                 <button class="btn" onclick="exportModule.close()">✕</button>
             </div>
-
-            <div class="export-tabs" style="margin-top: 20px;">
-                <button id="tab-normal" class="tab-btn active" onclick="exportModule.setMode('normal')">Для людей (Текст)</button>
-                <button id="tab-ai" class="tab-btn" onclick="exportModule.setMode('ai')">AI-Compressed (Экономия токенов)</button>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+                <button class="btn" id="export-mode-normal" onclick="exportModule.setMode('normal')">Для людей</button>
+                <button class="btn" id="export-mode-ai" onclick="exportModule.setMode('ai')">AI-Compressed</button>
             </div>
-
-            <div id="ai-info" style="font-size: 0.8rem; color: #adff2f; display: none;">
-                💡 Режим ИИ: Удалены лишние пробелы, структура упакована. Текст сохранен на 100%.
-                <span id="compression-stats" style="font-weight: bold; margin-left: 10px; color: #fff; background: #444; padding: 2px 6px; border-radius: 4px;"></span>
-            </div>
-
             <div id="export-preview"></div>
-
-            <div style="display: flex; justify-content: flex-end; gap: 10px;">
-                <button class="btn" onclick="exportModule.copy()">Скопировать в буфер</button>
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="btn" onclick="exportModule.copy()">Скопировать всё</button>
             </div>
         </div>
     </div>
@@ -151,12 +162,23 @@
     <div id="print-zone"></div>
 
     <div id="side-panels">
-        <aside>
-            <div class="sidebar-header"><h2>Книги</h2><button onclick="ui.promptBook()" class="btn">+</button></div>
+        <aside id="books-aside">
+            <div class="sidebar-header">
+                <h2>Книги</h2>
+                <button onclick="ui.promptBook()" class="btn-mini" style="font-size: 1.2rem;">+</button>
+            </div>
             <div id="book-list" class="list-container"></div>
+            <div style="padding: 15px; border-top: 1px solid #333; display: flex; flex-direction: column; gap: 8px;">
+                <button class="btn" style="background: #333; color: #888; border:none;" onclick="app.downloadBackup()">Бэкап (JSON)</button>
+                <button class="btn" style="background: #333; color: #888; border:none;" onclick="app.importBackup()">Импорт</button>
+            </div>
         </aside>
-        <aside style="background: #222;">
-            <div class="sidebar-header" style="background: #111;"><h2>Главы</h2><button onclick="ui.promptChapter()" class="btn">+</button></div>
+
+        <aside id="chapters-aside" style="background: #222;">
+            <div class="sidebar-header" style="background: #111;">
+                <h2>Главы</h2>
+                <button onclick="ui.promptChapter()" class="btn-mini" style="font-size: 1.2rem;">+</button>
+            </div>
             <div id="toc-list" class="list-container"></div>
         </aside>
     </div>
@@ -164,25 +186,28 @@
     <main>
         <div class="toolbar">
             <button class="btn" onclick="app.toggleSidebar()">≡</button>
-            <div id="breadcrumb" style="color: #888; font-size: 0.9rem;"></div>
+            <div id="breadcrumb" style="color: #888; font-size: 0.85rem;">Загрузка...</div>
             <div style="margin-left: auto; display: flex; gap: 10px;">
-                <button class="btn" onclick="exportModule.open()">Экспорт Текста / AI</button>
+                <button class="btn" onclick="exportModule.open()">Экспорт</button>
                 <button class="btn" onclick="app.preparePDF()" style="background: var(--accent); color: white; border: none;">Сохранить PDF</button>
             </div>
         </div>
 
         <div id="editor-scroll-viewport">
             <div class="paper-sheet" id="paper" style="display: none;">
-                <input type="text" id="chapter-title-input" oninput="app.updateChapterTitle(this.value)">
-                <textarea id="content-editor" oninput="app.handleInput(this)" spellcheck="false"></textarea>
+                <input type="text" id="chapter-title-input" oninput="app.updateChapterTitle(this.value)" placeholder="Название главы">
+                <textarea id="content-editor" oninput="app.handleInput(this)" spellcheck="false" placeholder="Начните писать..."></textarea>
                 <div class="sheet-num" id="sheet-page-number">1</div>
             </div>
-            <div id="empty-notice" style="margin-top: 100px; opacity: 0.3; text-align: center;"><h1>ScribeMind</h1><p>Выберите книгу или создайте новую</p></div>
+            <div id="empty-notice" style="margin-top: 150px; text-align: center; opacity: 0.25;">
+                <h1>RehBook</h1>
+                <p>Создайте или выберите книгу слева</p>
+            </div>
         </div>
 
         <div class="pagination" id="pagination-ctrl" style="display: none;">
             <button class="btn" onclick="app.changePage(-1)">←</button>
-            <div id="page-nav" style="display: flex; gap: 8px;"></div>
+            <div id="page-nav" style="display: flex; gap: 5px;"></div>
             <button class="btn" onclick="app.changePage(1)">→</button>
         </div>
     </main>
@@ -193,78 +218,93 @@
             sidebarVisible: true,
 
             init() {
-                const saved = localStorage.getItem('scribemind_v12');
+                const saved = localStorage.getItem('scribemind_v15_final');
                 if (saved) this.data = JSON.parse(saved);
                 ui.renderBooks();
-                this.refreshUI();
+                if (this.data.activeBookId) {
+                    ui.renderTOC();
+                    this.refreshUI();
+                }
             },
 
-            save() { localStorage.setItem('scribemind_v12', JSON.stringify(this.data)); },
+            save() { localStorage.setItem('scribemind_v15_final', JSON.stringify(this.data)); },
+
+            getActiveBook() { return this.data.books.find(b => b.id === this.data.activeBookId) || null; },
+            getActiveChapter() {
+                const book = this.getActiveBook();
+                return book ? book.chapters.find(c => c.id === this.data.activeChapterId) : null;
+            },
 
             handleInput(el) {
                 const ch = this.getActiveChapter();
+                if (!ch) return;
                 ch.pages[this.data.activePageIdx] = el.value;
-
                 if (el.scrollHeight > el.clientHeight) {
                     const words = el.value.split(' ');
                     const lastWord = words.pop();
                     ch.pages[this.data.activePageIdx] = words.join(' ');
-
                     if (ch.pages[this.data.activePageIdx + 1] !== undefined) {
                         ch.pages[this.data.activePageIdx + 1] = lastWord + " " + ch.pages[this.data.activePageIdx + 1];
                     } else {
                         ch.pages.push(lastWord);
                     }
-
                     this.data.activePageIdx++;
                     this.refreshUI();
-                    document.getElementById('editor-scroll-viewport').scrollTop = 0;
-
-                    setTimeout(() => {
-                        const edit = document.getElementById('content-editor');
-                        edit.focus();
-                        edit.selectionStart = edit.selectionEnd = 0;
-                    }, 0);
                 }
                 this.save();
             },
 
+            selectBook(id) {
+                this.data.activeBookId = id;
+                const book = this.getActiveBook();
+                if (book && book.chapters.length > 0) {
+                    this.data.activeChapterId = book.chapters[0].id;
+                    this.data.activePageIdx = 0;
+                } else {
+                    this.data.activeChapterId = null;
+                }
+                ui.renderBooks(); ui.renderTOC(); this.refreshUI(); this.save();
+            },
+
+            selectChapter(id) {
+                this.data.activeChapterId = id;
+                this.data.activePageIdx = 0;
+                ui.renderTOC(); this.refreshUI(); this.save();
+            },
+
             refreshUI() {
+                const book = this.getActiveBook();
                 const ch = this.getActiveChapter();
-                const book = this.data.books.find(b => b.id === this.data.activeBookId);
                 const paper = document.getElementById('paper');
                 const titleInput = document.getElementById('chapter-title-input');
                 const editor = document.getElementById('content-editor');
 
-                if (ch) {
+                if (book && ch) {
                     paper.style.display = 'block';
                     document.getElementById('empty-notice').style.display = 'none';
                     document.getElementById('pagination-ctrl').style.display = 'flex';
-
                     if (this.data.activePageIdx === 0) {
-                        titleInput.style.display = 'block';
-                        titleInput.value = ch.title;
+                        titleInput.style.display = 'block'; titleInput.value = ch.title;
                         editor.style.height = 'calc(var(--paper-height) - 100px)';
                     } else {
                         titleInput.style.display = 'none';
                         editor.style.height = 'calc(var(--paper-height) - 60px)';
                     }
-
                     editor.value = ch.pages[this.data.activePageIdx] || "";
                     document.getElementById('sheet-page-number').innerText = this.getGlobalNum();
                     document.getElementById('breadcrumb').innerText = `${book.title} / ${ch.title}`;
                     this.renderPageNav(ch.pages.length);
                 } else {
-                    paper.style.display = 'none';
-                    document.getElementById('empty-notice').style.display = 'block';
+                    paper.style.display = 'none'; document.getElementById('empty-notice').style.display = 'block';
                     document.getElementById('pagination-ctrl').style.display = 'none';
+                    document.getElementById('breadcrumb').innerText = book ? `${book.title} (без глав)` : "Выберите книгу...";
                 }
             },
 
             getGlobalNum() {
-                const book = this.data.books.find(b => b.id === this.data.activeBookId);
-                let count = 0;
+                const book = this.getActiveBook();
                 if(!book) return 1;
+                let count = 0;
                 for (let ch of book.chapters) {
                     if (ch.id === this.data.activeChapterId) return count + this.data.activePageIdx + 1;
                     count += ch.pages.length;
@@ -274,120 +314,200 @@
 
             renderPageNav(total) {
                 const nav = document.getElementById('page-nav');
-                nav.innerHTML = Array.from({length: total}, (_, i) => `<div class="page-dot ${i === this.data.activePageIdx ? 'active' : ''}" onclick="app.data.activePageIdx=${i}; app.refreshUI();">${i+1}</div>`).join('');
+                nav.innerHTML = Array.from({length: total}, (_, i) =>
+                    `<div class="page-dot ${i === this.data.activePageIdx ? 'active' : ''}" onclick="app.goToPage(${i})">${i+1}</div>`
+                ).join('');
+            },
+
+            goToPage(idx) {
+                this.data.activePageIdx = idx; this.refreshUI(); this.save();
+                document.getElementById('editor-scroll-viewport').scrollTop = 0;
+            },
+
+            changePage(dir) {
+                const ch = this.getActiveChapter();
+                if (!ch) return;
+                const target = this.data.activePageIdx + dir;
+                if (target >= 0 && target < ch.pages.length) this.goToPage(target);
+                else if (target === ch.pages.length) { ch.pages.push(""); this.goToPage(target); }
+            },
+
+            updateChapterTitle(v) {
+                const ch = this.getActiveChapter();
+                if(ch) { ch.title = v; ui.renderTOC(); this.save(); }
+            },
+
+            toggleSidebar() {
+                this.sidebarVisible = !this.sidebarVisible;
+                document.getElementById('side-panels').classList.toggle('hidden', !this.sidebarVisible);
+            },
+
+            downloadBackup() {
+                const blob = new Blob([JSON.stringify(this.data)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `scribemind_backup.json`; a.click();
+            },
+
+            importBackup() {
+                const input = document.createElement('input'); input.type = 'file';
+                input.onchange = e => {
+                    const reader = new FileReader(); reader.readAsText(e.target.files[0]);
+                    reader.onload = ev => { this.data = JSON.parse(ev.target.result); this.save(); location.reload(); };
+                };
+                input.click();
             },
 
             preparePDF() {
-                const book = this.data.books.find(b => b.id === this.data.activeBookId);
-                if (!book) return;
+                const book = this.getActiveBook(); if (!book) return;
                 const printZone = document.getElementById('print-zone');
                 const measure = document.getElementById('measure-layer');
-                printZone.innerHTML = '';
-                let globalCounter = 1;
-
+                printZone.innerHTML = ''; let globalCounter = 1;
                 book.chapters.forEach(ch => {
                     let fullText = ch.pages.join(' ').replace(/\s+/g, ' ').trim();
-                    let words = fullText.split(' ');
-                    let isFirstPage = true;
-                    const maxH = 920;
-
+                    let words = fullText.split(' '); let isFirstPage = true;
                     while (words.length > 0) {
-                        measure.innerText = "";
-                        let addedIdx = 0;
-                        let titleOffset = isFirstPage ? 80 : 20;
-
+                        measure.innerText = ""; let addedIdx = 0;
+                        let titleOffset = isFirstPage ? 100 : 30;
                         for (let i = 0; i < words.length; i++) {
                             measure.innerText = words.slice(0, i + 1).join(' ');
-                            if (measure.offsetHeight + titleOffset > maxH) break;
+                            if (measure.offsetHeight + titleOffset > 900) break;
                             addedIdx = i + 1;
                         }
                         if (addedIdx === 0) addedIdx = 1;
-
                         const pageContent = words.splice(0, addedIdx).join(' ');
                         const pageDiv = document.createElement('div');
                         pageDiv.className = 'print-page';
                         let header = isFirstPage ? `<div class="print-title">${ch.title}</div>` : '';
                         pageDiv.innerHTML = `${header}<div class="print-text">${pageContent}</div><div class="sheet-num">${globalCounter}</div>`;
-                        printZone.appendChild(pageDiv);
-                        globalCounter++;
-                        isFirstPage = false;
+                        printZone.appendChild(pageDiv); globalCounter++; isFirstPage = false;
                     }
                 });
                 window.print();
+            }
+        };
+
+        const ui = {
+            renderBooks() {
+                document.getElementById('book-list').innerHTML = app.data.books.map(b => `
+                    <div class="item ${b.id === app.data.activeBookId ? 'active' : ''}" onclick="app.selectBook('${b.id}')">
+                        <span class="item-text">${b.title}</span>
+                        <div class="item-actions">
+                            <button class="btn-mini" onclick="ui.renameBook('${b.id}', event)">✎</button>
+                            <button class="btn-mini" onclick="ui.deleteBook('${b.id}', event)">✕</button>
+                        </div>
+                    </div>
+                `).join('');
             },
 
-            getActiveChapter() {
-                const b = this.data.books.find(b => b.id === this.data.activeBookId);
-                return b ? b.chapters.find(c => c.id === this.data.activeChapterId) : null;
+            renderTOC() {
+                const book = app.getActiveBook();
+                document.getElementById('toc-list').innerHTML = book ? book.chapters.map(c => `
+                    <div class="item ${c.id === app.data.activeChapterId ? 'active' : ''}" onclick="app.selectChapter('${c.id}')">
+                        <span class="item-text">${c.title}</span>
+                        <div class="item-actions">
+                            <button class="btn-mini" onclick="ui.deleteChapter('${c.id}', event)">✕</button>
+                        </div>
+                    </div>
+                `).join('') : "";
             },
-            updateChapterTitle(v) { const ch = this.getActiveChapter(); if(ch){ch.title = v; ui.renderTOC(); this.save();} },
-            toggleSidebar() { this.sidebarVisible = !this.sidebarVisible; document.getElementById('side-panels').classList.toggle('hidden', !this.sidebarVisible); },
-            changePage(dir) {
-                const ch = this.getActiveChapter();
-                const target = this.data.activePageIdx + dir;
-                if (target >= 0 && target < ch.pages.length) { this.data.activePageIdx = target; this.refreshUI(); document.getElementById('editor-scroll-viewport').scrollTop = 0; }
-                else if (target === ch.pages.length) { ch.pages.push(""); this.data.activePageIdx = target; this.refreshUI(); document.getElementById('editor-scroll-viewport').scrollTop = 0; }
-            }
+
+            promptBook() {
+                this.showModal("Новая книга", "Введите название книги...", "", true, (v) => {
+                    const id = 'b'+Date.now();
+                    app.data.books.push({ id, title: v, chapters: [] });
+                    app.selectBook(id);
+                });
+            },
+
+            promptChapter() {
+                if(!app.data.activeBookId) return;
+                this.showModal("Новая глава", "Введите название главы...", "", true, (v) => {
+                    const book = app.getActiveBook();
+                    const id = 'c'+Date.now();
+                    book.chapters.push({ id, title: v, pages: [""] });
+                    app.selectChapter(id);
+                });
+            },
+
+            renameBook(id, e) {
+                e.stopPropagation();
+                const book = app.data.books.find(b => b.id === id);
+                this.showModal("Переименовать", "Новое название книги:", book.title, true, (v) => {
+                    book.title = v; this.renderBooks(); app.save(); app.refreshUI();
+                });
+            },
+
+            deleteBook(id, e) {
+                e.stopPropagation();
+                this.showModal("Удаление книги", "Вы уверены, что хотите безвозвратно удалить всю книгу и её содержимое?", "", false, () => {
+                    app.data.books = app.data.books.filter(b => b.id !== id);
+                    if(app.data.activeBookId === id) { app.data.activeBookId = null; app.data.activeChapterId = null; }
+                    this.renderBooks(); this.renderTOC(); app.refreshUI(); app.save();
+                });
+            },
+
+            deleteChapter(id, e) {
+                e.stopPropagation();
+                this.showModal("Удаление главы", "Удалить эту главу?", "", false, () => {
+                    const book = app.getActiveBook();
+                    book.chapters = book.chapters.filter(c => c.id !== id);
+                    if(app.data.activeChapterId === id) { book.chapters.length > 0 ? app.selectChapter(book.chapters[0].id) : (app.data.activeChapterId = null); }
+                    this.renderTOC(); app.refreshUI(); app.save();
+                });
+            },
+
+            // УНИВЕРСАЛЬНОЕ МОДАЛЬНОЕ ОКНО
+            showModal(title, desc, value, isPrompt, cb) {
+                const m = document.getElementById('system-modal');
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                document.getElementById('modal-title').innerText = title;
+                document.getElementById('modal-desc').innerText = desc;
+                const input = document.getElementById('modal-input');
+
+                if (isPrompt) {
+                    input.style.display = 'block';
+                    input.value = value;
+                    confirmBtn.style.background = 'var(--accent)';
+                } else {
+                    input.style.display = 'none';
+                    confirmBtn.style.background = 'var(--danger)';
+                }
+
+                m.style.display = 'flex';
+                if (isPrompt) input.focus();
+
+                confirmBtn.onclick = () => {
+                    if (isPrompt && !input.value.trim()) return;
+                    cb(input.value);
+                    this.closeModal();
+                };
+            },
+            closeModal() { document.getElementById('system-modal').style.display = 'none'; }
         };
 
         const exportModule = {
             mode: 'normal',
             open() {
-                if (!app.data.activeBookId) return;
-                document.getElementById('export-modal').style.display = 'flex';
-                this.render();
+                const book = app.getActiveBook(); if (!book) return;
+                document.getElementById('export-modal').style.display = 'flex'; this.render();
             },
             close() { document.getElementById('export-modal').style.display = 'none'; },
-            setMode(m) {
-                this.mode = m;
-                document.getElementById('tab-normal').className = m === 'normal' ? 'tab-btn active' : 'tab-btn';
-                document.getElementById('tab-ai').className = m === 'ai' ? 'tab-btn active' : 'tab-btn';
-                document.getElementById('ai-info').style.display = m === 'ai' ? 'block' : 'none';
-                this.render();
-            },
+            setMode(m) { this.mode = m; this.render(); },
             render() {
-                const book = app.data.books.find(b => b.id === app.data.activeBookId);
-                const preview = document.getElementById('export-preview');
-                let output = "";
-
+                const book = app.getActiveBook(); const preview = document.getElementById('export-preview');
+                let out = "";
                 if (this.mode === 'normal') {
-                    output += `КНИГА: ${book.title.toUpperCase()}\n`;
-                    output += `================================\n\n`;
-                    book.chapters.forEach(ch => {
-                        output += `ГЛАВА: ${ch.title}\n`;
-                        output += `--------------------------------\n`;
-                        output += ch.pages.join(' ').replace(/\s+/g, ' ').trim() + "\n\n";
-                    });
+                    out = `КНИГА: ${book.title.toUpperCase()}\n\n`;
+                    book.chapters.forEach(ch => { out += `ГЛАВА: ${ch.title}\n${ch.pages.join(' ')}\n\n`; });
                 } else {
-                    let rawLen = 0;
-                    output = `[B:${book.title.replace(/\s/g, '_')}]`;
-                    book.chapters.forEach((ch, idx) => {
-                        const cleanText = ch.pages.join(' ').replace(/\s+/g, ' ').trim();
-                        rawLen += (ch.title.length + cleanText.length);
-                        output += `[Ch${idx+1}:${ch.title.replace(/\s/g, '_')}]${cleanText}`;
-                    });
-                    const saving = Math.round((1 - output.length / rawLen) * 100);
-                    document.getElementById('compression-stats').innerText = `Экономия: ${saving > 0 ? saving : 0}% символов`;
+                    out = `[B:${book.title.replace(/\s/g, '_')}]`;
+                    book.chapters.forEach((ch, i) => { out += `[Ch${i+1}:${ch.title.replace(/\s/g, '_')}]${ch.pages.join(' ').replace(/\s+/g, ' ')}`; });
                 }
-                preview.innerText = output;
+                preview.innerText = out;
             },
-            copy() {
-                const txt = document.getElementById('export-preview').innerText;
-                navigator.clipboard.writeText(txt).then(() => alert("Текст скопирован в буфер обмена!"));
-            }
+            copy() { navigator.clipboard.writeText(document.getElementById('export-preview').innerText); alert("Скопировано!"); }
         };
-
-        const ui = {
-            promptBook() { ui.showModal("Новая книга", "", (v) => { const id = 'b'+Date.now(); app.data.books.push({ id, title: v, chapters: [] }); app.selectBook(id); });},
-            promptChapter() { if(!app.data.activeBookId) return; ui.showModal("Новая глава", "", (v) => { const b = app.data.books.find(x => x.id === app.data.activeBookId); const id = 'c'+Date.now(); b.chapters.push({ id, title: v, pages: [""] }); app.selectChapter(id); });},
-            renderBooks() { document.getElementById('book-list').innerHTML = app.data.books.map(b => `<div class="item ${b.id === app.data.activeBookId ? 'active' : ''}" onclick="app.selectBook('${b.id}')">${b.title}</div>`).join(''); },
-            renderTOC() { const b = app.data.books.find(x => x.id === app.data.activeBookId); if (!b) return; document.getElementById('toc-list').innerHTML = b.chapters.map(c => `<div class="item ${c.id === app.data.activeChapterId ? 'active' : ''}" onclick="app.selectChapter('${c.id}')">${c.title}</div>`).join(''); },
-            showModal(t, p, cb) { const m = document.getElementById('custom-modal'); document.getElementById('modal-title').innerText = t; const i = document.getElementById('modal-input'); i.value = ""; m.style.display = 'flex'; i.focus(); document.getElementById('modal-confirm-btn').onclick = () => { if(i.value){cb(i.value); ui.closeModal();} }; },
-            closeModal() { document.getElementById('custom-modal').style.display = 'none'; }
-        };
-
-        app.selectBook = (id) => { app.data.activeBookId = id; const b = app.data.books.find(x=>x.id===id); if(b.chapters.length===0) ui.promptChapter(); else app.selectChapter(b.chapters[0].id); ui.renderBooks(); };
-        app.selectChapter = (id) => { app.data.activeChapterId = id; app.data.activePageIdx = 0; ui.renderTOC(); app.refreshUI(); };
 
         app.init();
     </script>
